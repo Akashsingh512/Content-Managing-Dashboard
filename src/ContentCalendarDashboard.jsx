@@ -128,13 +128,13 @@ const ContentCalendarDashboard = () => {
 const getAccessToken = async (serviceAccountJson) => {
   try {
     const serviceAccount = JSON.parse(serviceAccountJson);
-    
-    // Create JWT header and payload
-    const header = {
-      alg: 'RS256',
-      typ: 'JWT'
-    };
 
+    // normalize private key if user pasted with escaped newlines
+    if (serviceAccount.private_key && serviceAccount.private_key.includes('\\n')) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
+
+    const header = { alg: 'RS256', typ: 'JWT' };
     const now = Math.floor(Date.now() / 1000);
     const claim = {
       iss: serviceAccount.client_email,
@@ -144,82 +144,78 @@ const getAccessToken = async (serviceAccountJson) => {
       iat: now
     };
 
-    // Base64 URL encode helper
-    const base64UrlEncode = (obj) => {
-      const str = JSON.stringify(obj);
-      return btoa(str)
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
-    };
+    const base64UrlEncode = (str) =>
+      btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-    const headerEncoded = base64UrlEncode(header);
-    const claimEncoded = base64UrlEncode(claim);
+    const headerEncoded = base64UrlEncode(JSON.stringify(header));
+    const claimEncoded = base64UrlEncode(JSON.stringify(claim));
     const signatureInput = `${headerEncoded}.${claimEncoded}`;
 
-    // Clean and prepare private key
-    let privateKey = serviceAccount.private_key;
-    
-    // Remove header, footer, and newlines
-    privateKey = privateKey
-      .replace('-----BEGIN PRIVATE KEY-----', '')
-      .replace('-----END PRIVATE KEY-----', '')
-      .replace(/\\n/g, '')
-      .replace(/\n/g, '')
-      .replace(/\s/g, '');
+    // helper: strip PEM header/footer and whitespace, return ArrayBuffer of DER
+    const pemToArrayBuffer = (pem) => {
+      // remove header/footer and newlines/spaces
+      const b64 = pem.replace(/-----BEGIN [^-]+-----/, '')
+                     .replace(/-----END [^-]+-----/, '')
+                     .replace(/\s+/g, '');
+      // validate base64 length roughly
+      if (!/^[A-Za-z0-9+/=]+$/.test(b64)) {
+        throw new Error('Private key PEM does not contain valid base64 characters after cleanup.');
+      }
+      const binary = atob(b64);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes.buffer;
+    };
 
-    // Convert base64 to binary
-    const binaryDer = Uint8Array.from(atob(privateKey), c => c.charCodeAt(0));
+    const pem = serviceAccount.private_key;
+    if (!pem || !pem.includes('PRIVATE KEY')) {
+      throw new Error('serviceAccount.private_key missing or malformed');
+    }
 
-    // Import the key
-    const cryptoKey = await crypto.subtle.importKey(
+    const privateKeyArrayBuffer = pemToArrayBuffer(pem);
+
+    // import PKCS8 key
+    const key = await crypto.subtle.importKey(
       'pkcs8',
-      binaryDer,
-      {
-        name: 'RSASSA-PKCS1-v1_5',
-        hash: 'SHA-256',
-      },
+      privateKeyArrayBuffer,
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
       false,
       ['sign']
     );
 
-    // Sign the JWT
-    const signature = await crypto.subtle.sign(
+    // sign the signatureInput
+    const signatureBuf = await crypto.subtle.sign(
       'RSASSA-PKCS1-v1_5',
-      cryptoKey,
+      key,
       new TextEncoder().encode(signatureInput)
     );
 
-    // Convert signature to base64url
-    const signatureArray = new Uint8Array(signature);
-    const signatureBase64 = btoa(String.fromCharCode(...signatureArray))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
+    // base64url-encode the signature
+    const signatureBytes = new Uint8Array(signatureBuf);
+    let signatureStr = '';
+    for (let i = 0; i < signatureBytes.length; i++) {
+      signatureStr += String.fromCharCode(signatureBytes[i]);
+    }
+    const signatureEncoded = btoa(signatureStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-    const jwt = `${signatureInput}.${signatureBase64}`;
+    const jwt = `${signatureInput}.${signatureEncoded}`;
 
-    // Exchange JWT for access token
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Token exchange failed: ${errorData.error_description || errorData.error}`);
-    }
-
     const data = await response.json();
+    if (!data.access_token) throw new Error('No access_token returned: ' + JSON.stringify(data));
     return data.access_token;
   } catch (error) {
     console.error('Error getting access token:', error);
-    throw new Error(`Authentication failed: ${error.message}`);
+    throw error;
   }
 };
+
   const loadFromSheets = async (config = sheetConfig) => {
     if (!config.spreadsheetId || !config.serviceAccount) {
       setSyncStatus({ message: 'Please configure Google Sheets settings', type: 'error' });
