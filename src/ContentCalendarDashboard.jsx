@@ -50,7 +50,7 @@ const ContentCalendarDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   const statusOptions = ['Draft', 'Scheduled', 'Published', 'Archived'];
-  const platformOptions = ['Instagram', 'Facebook', 'Twitter', 'LinkedIn', 'YouTube', 'TikTok', 'Blog'];
+  const platformOptions = ['Instagram', 'Facebook', 'Twitter', 'LinkedIn', 'YouTube'];
 
   useEffect(() => {
     const savedConfig = localStorage.getItem('sheetConfig');
@@ -65,66 +65,6 @@ const ContentCalendarDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // const getAccessToken = async (serviceAccountJson) => {
-  //   try {
-  //     const serviceAccount = JSON.parse(serviceAccountJson);
-  //     const header = { alg: 'RS256', typ: 'JWT' };
-  //     const now = Math.floor(Date.now() / 1000);
-  //     const claim = {
-  //       iss: serviceAccount.client_email,
-  //       scope: 'https://www.googleapis.com/auth/spreadsheets',
-  //       aud: 'https://oauth2.googleapis.com/token',
-  //       exp: now + 3600,
-  //       iat: now
-  //     };
-
-  //     const base64UrlEncode = (str) =>
-  //       btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-  //     const headerEncoded = base64UrlEncode(JSON.stringify(header));
-  //     const claimEncoded = base64UrlEncode(JSON.stringify(claim));
-  //     const signatureInput = `${headerEncoded}.${claimEncoded}`;
-
-  //     const pemHeader = '-----BEGIN PRIVATE KEY-----';
-  //     const pemFooter = '-----END PRIVATE KEY-----';
-  //     const pemContents = serviceAccount.private_key.substring(
-  //       pemHeader.length,
-  //       serviceAccount.private_key.length - pemFooter.length
-  //     );
-  //     const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
-
-  //     const key = await crypto.subtle.importKey(
-  //       'pkcs8',
-  //       binaryDer,
-  //       { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-  //       false,
-  //       ['sign']
-  //     );
-
-  //     const signature = await crypto.subtle.sign(
-  //       'RSASSA-PKCS1-v1_5',
-  //       key,
-  //       new TextEncoder().encode(signatureInput)
-  //     );
-
-  //     const signatureEncoded = base64UrlEncode(
-  //       String.fromCharCode(...new Uint8Array(signature))
-  //     );
-  //     const jwt = `${signatureInput}.${signatureEncoded}`;
-
-  //     const response = await fetch('https://oauth2.googleapis.com/token', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  //       body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
-  //     });
-
-  //     const data = await response.json();
-  //     return data.access_token;
-  //   } catch (error) {
-  //     console.error('Error getting access token:', error);
-  //     throw error;
-  //   }
-  // };
 const getAccessToken = async (serviceAccountJson) => {
   try {
     const serviceAccount = JSON.parse(serviceAccountJson);
@@ -534,11 +474,14 @@ const getAccessToken = async (serviceAccountJson) => {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center transform rotate-45">
-                  <div className="transform -rotate-45 text-white font-bold text-xl">H</div>
-                </div>
+                <img 
+  src="/Logo.png" 
+  alt="Brand Logo" 
+  className="w-10 h-10 object-contain"
+/>
+
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Content Hub</h1>
+                  <h1 className="text-xl font-bold text-gray-900">Houzlook</h1>
                   <p className="text-xs text-gray-500">Brand Calendar</p>
                 </div>
               </div>
@@ -605,7 +548,8 @@ const getAccessToken = async (serviceAccountJson) => {
               </div>
             )}
 
-            <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-lg p-4 text-white">
+            <div className="rounded-xl shadow-sm p-4 text-white col-span-2 sm:col-span-1" style={{ backgroundColor: "#E6101E" }}>
+
               <div className="flex items-center justify-between mb-2">
                 <Calendar className="w-6 h-6" />
                 <span className="text-2xl font-bold">{posts.length}</span>
@@ -814,7 +758,9 @@ const getAccessToken = async (serviceAccountJson) => {
                       </div>
                     );
                   })}
-                  <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-sm p-4 text-white col-span-2 sm:col-span-1">
+                  {/* <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-sm p-4 text-white col-span-2 sm:col-span-1"> */}
+                  <div className="rounded-xl shadow-sm p-4 text-white col-span-2 sm:col-span-1" style={{ backgroundColor: "#E6101E" }}>
+
                     <Calendar className="w-10 h-10 mb-3" />
                     <div className="text-2xl sm:text-3xl font-bold mb-1">{posts.length}</div>
                     <div className="text-xs sm:text-sm font-medium opacity-90">Total Posts</div>
@@ -846,7 +792,7 @@ const getAccessToken = async (serviceAccountJson) => {
                     <Search className="w-5 h-5 text-gray-400" />
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900">Filter & Search</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                     <div className="sm:col-span-2">
                       <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
                     </div>
@@ -873,18 +819,81 @@ const getAccessToken = async (serviceAccountJson) => {
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </div> */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+
+  {/* Search */}
+  <div className="sm:col-span-2">
+    <input
+      type="text"
+      placeholder="Search..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+    />
+  </div>
+
+  {/* Status */}
+  <select
+    value={filterStatus}
+    onChange={(e) => setFilterStatus(e.target.value)}
+    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+  >
+    <option value="All">All Status</option>
+    {statusOptions.map(status => (
+      <option key={status} value={status}>{status}</option>
+    ))}
+  </select>
+
+  {/* Tags */}
+  <select
+    value={filterTag}
+    onChange={(e) => setFilterTag(e.target.value)}
+    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+  >
+    {getUniqueTags().map(tag => (
+      <option key={tag} value={tag}>{tag}</option>
+    ))}
+  </select>
+
+  {/* Platforms */}
+  <select
+    value={filterPlatform}
+    onChange={(e) => setFilterPlatform(e.target.value)}
+    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+  >
+    <option value="All">All Platforms</option>
+    {platformOptions.map(p => (
+      <option key={p} value={p}>{p}</option>
+    ))}
+  </select>
+
+  {/* Date Range — This Month (NOW ALIGNED) */}
+  <select
+    value={dateRange}
+    onChange={(e) => setDateRange(e.target.value)}
+    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+  >
+    <option value="All">All Time</option>
+    <option value="Today">Today</option>
+    <option value="This Week">This Week</option>
+    <option value="This Month">This Month</option>
+    <option value="Past">Past</option>
+  </select>
+
+</div>
+
                   <div className="mt-4 flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
                     <div className="text-sm text-gray-600">
                       <span className="font-semibold text-red-600">{filteredPosts.length}</span> of {posts.length} posts
                     </div>
-                    <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm">
+                    {/* <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm">
                       <option value="All">All Time</option>
                       <option value="Today">Today</option>
                       <option value="This Week">This Week</option>
                       <option value="This Month">This Month</option>
                       <option value="Past">Past</option>
-                    </select>
+                    </select> */}
                   </div>
                 </div>
 
